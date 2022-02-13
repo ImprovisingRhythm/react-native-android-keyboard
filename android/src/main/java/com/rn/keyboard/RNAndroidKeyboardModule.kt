@@ -1,0 +1,112 @@
+package com.rn.keyboard
+
+import android.view.WindowManager.LayoutParams
+import com.facebook.react.bridge.*
+import com.facebook.react.modules.core.DeviceEventManagerModule
+
+@Suppress("unused")
+class RNAndroidKeyboardModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), LifecycleEventListener {
+    private var keyboardProvider: KeyboardProvider? = null
+    private var isInitialized: Boolean = false
+
+    init {
+        reactContext.addLifecycleEventListener(this)
+    }
+
+    @ReactMethod
+    fun setWindowSoftInputMode(mode: Int, promise: Promise) {
+        try {
+            UiThreadUtil.runOnUiThread {
+                currentActivity?.window?.setSoftInputMode(mode)
+                promise.resolve("success")
+            }
+        } catch (e: Exception) {
+            promise.reject("error", e.toString())
+        }
+    }
+
+    @ReactMethod
+    fun startKeyboardListener() {
+        try {
+            UiThreadUtil.runOnUiThread {
+                val mActivity = currentActivity
+
+                if (mActivity != null) {
+                    keyboardProvider = KeyboardProvider(mActivity)
+                    keyboardProvider?.addKeyboardListener(object : KeyboardProvider.KeyboardListener {
+                        override fun onHeightChanged(height: Int) {
+                            emit(height)
+                        }
+                    })
+
+                    isInitialized = true
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    @ReactMethod
+    fun stopKeyboardListener() {
+        try {
+            keyboardProvider?.removeKeyboardListener()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    @ReactMethod
+    fun addListener(eventName: String) {}
+
+    @ReactMethod
+    fun removeListeners(count: Int) {}
+
+    override fun getName(): String {
+        return "RNAndroidKeyboard"
+    }
+
+    fun emit(height: Int) {
+        try {
+            reactApplicationContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                .emit("keyboardDidChangeHeight", height)
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun getConstants(): Map<String, Any>? {
+        var constants = HashMap<String, Any>()
+
+        constants.put("SOFT_INPUT_ADJUST_NOTHING", LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        constants.put("SOFT_INPUT_ADJUST_PAN", LayoutParams.SOFT_INPUT_ADJUST_PAN)
+        constants.put("SOFT_INPUT_ADJUST_RESIZE", LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        constants.put("SOFT_INPUT_ADJUST_UNSPECIFIED", LayoutParams.SOFT_INPUT_ADJUST_UNSPECIFIED)
+        constants.put("SOFT_INPUT_IS_FORWARD_NAVIGATION", LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION)
+        constants.put("SOFT_INPUT_MASK_ADJUST", LayoutParams.SOFT_INPUT_MASK_ADJUST)
+        constants.put("SOFT_INPUT_MASK_STATE", LayoutParams.SOFT_INPUT_MASK_STATE)
+        constants.put("SOFT_INPUT_MODE_CHANGED", LayoutParams.SOFT_INPUT_MODE_CHANGED)
+        constants.put("SOFT_INPUT_STATE_ALWAYS_HIDDEN", LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+        constants.put("SOFT_INPUT_STATE_ALWAYS_VISIBLE", LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+        constants.put("SOFT_INPUT_STATE_HIDDEN", LayoutParams.SOFT_INPUT_STATE_HIDDEN)
+        constants.put("SOFT_INPUT_STATE_UNCHANGED", LayoutParams.SOFT_INPUT_STATE_UNCHANGED)
+        constants.put("SOFT_INPUT_STATE_UNSPECIFIED", LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED)
+        constants.put("SOFT_INPUT_STATE_VISIBLE", LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+
+        return constants;
+    }
+
+    override fun onHostResume() {
+        if (isInitialized && keyboardProvider == null) {
+            startKeyboardListener()
+        }
+    }
+
+    override fun onHostPause() {}
+
+    override fun onHostDestroy() {
+        keyboardProvider?.dismiss()
+        keyboardProvider = null
+    }
+}
