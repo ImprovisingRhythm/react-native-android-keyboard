@@ -15,6 +15,7 @@ import kotlin.math.max
 
 class KeyboardProvider(private val activity: Activity) : PopupWindow(activity) {
     private var previousKeyboardHeight = -1
+    private var initialWindowHeight = 0
     private var resizableView: View
     private var parentView: View? = null
     private var keyboardListeners = ArrayList<KeyboardListener>()
@@ -50,24 +51,22 @@ class KeyboardProvider(private val activity: Activity) : PopupWindow(activity) {
     }
 
     private fun getGlobalLayoutListener() = ViewTreeObserver.OnGlobalLayoutListener {
-        computeKeyboardState()
-    }
-
-    private fun computeKeyboardState() {
-        val metrics = DisplayMetrics()
         val rect = Rect()
 
-        activity.windowManager.defaultDisplay.getMetrics(metrics)
         resizableView.getWindowVisibleDisplayFrame(rect)
 
-        val orientation = activity.resources.configuration.orientation
-        val keyboardHeight = max(metrics.heightPixels - rect.bottom, 0)
+        if (initialWindowHeight == 0) {
+            initialWindowHeight = rect.height()
+        } else {
+            val orientation = activity.resources.configuration.orientation
+            val keyboardHeight = max(initialWindowHeight - rect.height(), 0)
 
-        if (keyboardHeight != previousKeyboardHeight) {
-            notifyKeyboardHeightChanged(keyboardHeight, orientation)
+            if (keyboardHeight != previousKeyboardHeight) {
+                notifyKeyboardHeightChanged(keyboardHeight, orientation)
+            }
+
+            previousKeyboardHeight = keyboardHeight
         }
-
-        previousKeyboardHeight = keyboardHeight
     }
 
     private fun notifyKeyboardHeightChanged(height: Int, orientation: Int) {
