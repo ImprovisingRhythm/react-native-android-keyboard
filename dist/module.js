@@ -40,32 +40,35 @@ export class AndroidKeyboardStatic {
         this.listeners = [];
     }
     setWindowSoftInputMode(mode) {
-        this.checkPlatform();
-        return KBModule.setWindowSoftInputMode(SOFT_INPUT_MODES[mode]);
+        if (Platform.OS !== 'android') {
+            console.warn('WindowSoftInputMode is Android specific feature');
+            return;
+        }
+        KBModule.setWindowSoftInputMode(SOFT_INPUT_MODES[mode]);
     }
     addListener(listener) {
-        this.checkPlatform();
+        if (Platform.OS !== 'android') {
+            console.warn('Intend to add Android-only keyboard event listener');
+            return;
+        }
         this.ensureInitialized();
         this.listeners.push(listener);
     }
     removeListener(listener) {
-        this.checkPlatform();
+        if (Platform.OS !== 'android') {
+            console.warn('Intend to remove Android-only keyboard event listener');
+            return;
+        }
         this.listeners = this.listeners.filter(cb => cb !== listener);
     }
     ensureInitialized() {
-        this.checkPlatform();
-        if (!this.initialized) {
+        if (Platform.OS === 'android' && !this.initialized) {
             KBModule.startKeyboardListener();
             eventEmitter.addListener('keyboardDidChangeHeight', (height) => {
                 const keyboardHeight = height / PixelRatio.get();
                 this.listeners.forEach(listener => listener(keyboardHeight));
             });
             this.initialized = true;
-        }
-    }
-    checkPlatform() {
-        if (Platform.OS !== 'android') {
-            throw new Error('Try to use Android only module');
         }
     }
 }

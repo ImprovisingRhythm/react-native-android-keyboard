@@ -19,10 +19,9 @@ export declare class AndroidKeyboardStatic {
     private initialized;
     private listeners;
     constructor();
-    setWindowSoftInputMode(mode: SoftInputMode): any;
+    setWindowSoftInputMode(mode: SoftInputMode): void;
     addListener(listener: AndroidKeyboardEventListener): void;
     removeListener(listener: AndroidKeyboardEventListener): void;
     private ensureInitialized;
-    private checkPlatform;
 }
 export declare const AndroidKeyboard: AndroidKeyboardStatic;

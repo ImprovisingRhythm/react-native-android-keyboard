@@ -55,28 +55,35 @@ export class AndroidKeyboardStatic {
   }
 
   setWindowSoftInputMode(mode: SoftInputMode) {
-    this.checkPlatform()
+    if (Platform.OS !== 'android') {
+      console.warn('WindowSoftInputMode is Android specific feature')
+      return
+    }
 
-    return KBModule.setWindowSoftInputMode(SOFT_INPUT_MODES[mode])
+    KBModule.setWindowSoftInputMode(SOFT_INPUT_MODES[mode])
   }
 
   addListener(listener: AndroidKeyboardEventListener) {
-    this.checkPlatform()
-    this.ensureInitialized()
+    if (Platform.OS !== 'android') {
+      console.warn('Intend to add Android-only keyboard event listener')
+      return
+    }
 
+    this.ensureInitialized()
     this.listeners.push(listener)
   }
 
   removeListener(listener: AndroidKeyboardEventListener) {
-    this.checkPlatform()
+    if (Platform.OS !== 'android') {
+      console.warn('Intend to remove Android-only keyboard event listener')
+      return
+    }
 
     this.listeners = this.listeners.filter(cb => cb !== listener)
   }
 
   private ensureInitialized() {
-    this.checkPlatform()
-
-    if (!this.initialized) {
+    if (Platform.OS === 'android' && !this.initialized) {
       KBModule.startKeyboardListener()
 
       eventEmitter.addListener('keyboardDidChangeHeight', (height: number) => {
@@ -86,12 +93,6 @@ export class AndroidKeyboardStatic {
       })
 
       this.initialized = true
-    }
-  }
-
-  private checkPlatform() {
-    if (Platform.OS !== 'android') {
-      throw new Error('Try to use Android only module')
     }
   }
 }
